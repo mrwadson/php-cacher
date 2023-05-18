@@ -38,12 +38,35 @@ Just use the cacher in your code like this:
 ```php
 <?php
 
-use App\Cache;
+use mrwadson\cacher;
+
+require __DIR__ . '/vendor/autoload.php';
+
+Cache::write('abc', ['key1' => 'value1']); // writes in "cache" dir (in current directory)
+
+print_r(Cache::read('abc'));
+```
+
+Will output:
+
+```php
+Array
+(
+    [key1] => value1
+)
+```
+
+Or set options for cacher if you need:
+
+```php
+<?php
+
+use mrwadson\cacher;
 
 require __DIR__ . '/vendor/autoload.php';
 
 Cache::options([
-    'cache_dir' => __DIR__ . '/cache', // write in cache directory
+    'cache_dir' => null, // if null -> by default "cache" dir (in executed script directory)
     'cache_expire' => 300, // set cache expire in 300 seconds = 5 minutes
 ]); 
 Cache::write('abc', ['key1' => 'value1']); 
