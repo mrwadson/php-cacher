@@ -76,7 +76,7 @@ class Cache
      *
      * @param string $key - file cache key
      *
-     * @return array
+     * @return mixed
      */
     public static function read($key)
     {
