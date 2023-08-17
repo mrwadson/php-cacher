@@ -102,7 +102,7 @@ class Cache
     public static function write($key, $value, $expire = 0)
     {
         self::delete($key);
-        file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . (time() + $expire ?: self::$options['cache_expire']), json_encode($value));
+        file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . (time() + ($expire ?: self::$options['cache_expire'])), json_encode($value));
     }
 
     /**
