@@ -16,7 +16,7 @@ class Cache
      */
     private static $options = [
         'cache_dir' => null, // if null -> will change to "cache" dir related to the running script.
-        'cache_expire' => 3600, // in seconds = 1 hour
+        'cache_expire' => 3600, // in seconds = 1 hour or -1 for lifetime cache
         'clear_cache_random' => false // clear cache in randomly period (see end function)
     ];
 
@@ -25,7 +25,7 @@ class Cache
     /**
      * Set options for cache
      *
-     * @param array $options - array of the options
+     * @param array $options array of the options
      *
      * @return void | array
      */
@@ -74,7 +74,7 @@ class Cache
     /**
      * Read cache from the cache file by key
      *
-     * @param string $key - file cache key
+     * @param string $key file cache key
      *
      * @return mixed
      */
@@ -93,22 +93,42 @@ class Cache
     /**
      * Write cache to the cache file by key
      *
-     * @param string $key - file cache key
-     * @param string | array $value - file cache key
-     * @param int $expire - expire period in seconds
+     * @param string $key file cache key
+     * @param string | array $value file cache key
+     * @param int $expire expire period in seconds
      *
      * @return void
      */
-    public static function write($key, $value, $expire = 0)
+    public static function write($key, $value, $expire = null)
     {
         self::delete($key);
-        file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . (time() + ($expire ?: self::$options['cache_expire'])), json_encode($value));
+        file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . self::getExpire($expire), json_encode($value));
     }
 
     /**
-     * Search cache the cache file by key
+     * Get cache expire time
      *
-     * @param string $key - file cache key
+     * @param int $expire seconds or -1 for lifetime cache
+     *
+     * @return mixed
+     */
+    private static function getExpire($expire = null)
+    {
+        if ($expire === -1) {
+            return $expire;
+        }
+
+        if (is_null($expire) && self::$options['cache_expire'] === -1) {
+            return self::$options['cache_expire'];
+        }
+
+        return (time() + (is_null($expire) ? self::$options['cache_expire'] : $expire));
+    }
+
+    /**
+     * Search the cache files by key
+     *
+     * @param string $key file cache key
      *
      * @return array
      */
@@ -120,7 +140,7 @@ class Cache
     /**
      * Delete the cache file by key
      *
-     * @param string $key - file cache key
+     * @param string $key file cache key
      *
      * @return void
      */
@@ -141,7 +161,7 @@ class Cache
     /**
      * Clean the key from unsupported characters
      *
-     * @param string $key - file cache key
+     * @param string $key file cache key
      *
      * @return string
      */
@@ -151,7 +171,7 @@ class Cache
     }
 
     /**
-     * Shutdown function - randomly started for clear all cache
+     * Shutdown function for clear all cache
      *
      * @return void
      */
@@ -161,8 +181,8 @@ class Cache
 
         if ($files && (!self::$options['clear_cache_random'] || mt_rand(1, 100) === 1)) {
             foreach ($files as $file) {
-                $time = substr(strrchr($file, '.'), 1);
-                if ($time < time() && !@unlink($file)) {
+                $time = (int)substr(strrchr($file, '.'), 1);
+                if ($time !== -1 && $time < time() && !@unlink($file)) {
                     clearstatcache(false, $file);
                 }
             }
