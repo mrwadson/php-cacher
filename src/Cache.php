@@ -17,7 +17,7 @@ class Cache
     private static $options = [
         'cache_dir' => null, // if null -> will change to "cache" dir related to the running script.
         'cache_expire' => 3600, // in seconds = 1 hour or -1 for lifetime cache
-        'clear_cache_random' => false // clear cache in randomly period (see end function)
+        'clear_cache_random' => false // clear cache in randomly period (see "end" function)
     ];
 
     private static $initiated = false;
@@ -87,7 +87,7 @@ class Cache
             return json_decode(file_get_contents($files[0]), true);
         }
 
-        return [];
+        return null;
     }
 
     /**
@@ -123,6 +123,25 @@ class Cache
         }
 
         return (time() + (is_null($expire) ? self::$options['cache_expire'] : $expire));
+    }
+
+    /**
+     * Get cache expired unix time by key
+     *
+     * @param string $key file cache key
+     *
+     * @return int|null
+     */
+    public static function getExpiredTime($key)
+    {
+        if (!self::$initiated) {
+            self::init();
+        }
+        if (($files = self::search($key)) && ($parts = explode('.', $files[0])) && $time = array_pop($parts)) {
+            return (int)$time;
+        }
+
+        return null;
     }
 
     /**

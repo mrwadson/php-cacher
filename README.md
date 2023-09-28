@@ -42,18 +42,14 @@ use mrwadson\cacher;
 
 require __DIR__ . '/vendor/autoload.php';
 
-Cache::write('abc', ['key1' => 'value1']); // writes in "cache" dir (in current directory)
+Cache::write('cache_key', ['key1' => 'value1']); // writes in "cache" dir (in current directory)
 
-print_r(Cache::read('abc'));
-```
+print_r(Cache::read('cache_key'));
 
-Will output:
-
-```php
-Array
-(
-    [key1] => value1
-)
+// Array
+// (
+//     [key1] => value1
+// )
 ```
 
 Or set options for cacher if you need:
@@ -69,23 +65,28 @@ Cache::options([
     'cache_dir' => null, // if null -> by default "cache" dir (in executed script directory)
     'cache_expire' => 300, // set cache expire in 300 seconds = 5 minutes
 ]); 
-Cache::write('abc', ['key1' => 'value1']); 
+Cache::write('cache_key', ['key1' => 'value1']); 
 
-print_r(Cache::read('abc'));
+print_r(Cache::read('cache_key'));
+
+// Array
+// (
+//     [key1] => value1
+// )
 ```
 
-Will output:
+Get the cache expired time by key:
 
 ```php
-Array
-(
-    [key1] => value1
-)
+$expiredTime = Cache::getExpiredTime('cache_key');
+echo $expiredTime; // cache filename by example: cache.cache_key.1695904404
+
+// 1695904404
 ```
 
 ## Tests
 
-Running the tests:
+Running the tests (PHPUnit):
 
 ```shell
 composer test
