@@ -24,6 +24,7 @@
         }
     },
     "scripts": {
-        "test": "./vendor/bin/phpunit tests"
+        "test": "./vendor/bin/phpunit tests",
+        "test-callback": "./vendor/bin/phpunit  --filter testCallbackOnReadTheCache tests"
     }
 }

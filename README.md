@@ -1,6 +1,6 @@
 # PHP Cacher
 
-Ease to use simple file cacher written in PHP.
+Ease to use simple file cacher written in PHP. Write and read your various data in easy way.
 
 ## Requirements
 
@@ -82,6 +82,27 @@ $expiredTime = Cache::getExpiredTime('cache_key');
 echo $expiredTime; // cache filename by example: cache.cache_key.1695904404
 
 // 1695904404
+```
+
+Make callback function call if data does not exist on read:
+
+```php
+<?php
+
+use mrwadson\cacher;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$data = Cache::read('cache_key', function () {
+    return ['key1' => 'value1']
+});
+
+print_r(Cache::read('cache_key'));
+
+// Array
+// (
+//     [key1] => value1
+// )
 ```
 
 ## Tests

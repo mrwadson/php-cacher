@@ -73,18 +73,26 @@ class Cache
 
     /**
      * Read cache from the cache file by key
+     * And writes callback function resulted data to the cache file (if callback function is used)
      *
      * @param string $key file cache key
+     * @param callable $callback callable function that return new data
+     * @param int $expire expire period in seconds if callable function used
      *
      * @return mixed
      */
-    public static function read($key)
+    public static function read($key, $callback = null, $expire = null)
     {
         if (!self::$initiated) {
             self::init();
         }
         if ($files = self::search($key)) {
             return json_decode(file_get_contents($files[0]), true);
+        }
+
+        if ($callback && $data = $callback()) {
+            self::write($key, $data, $expire);
+            return $data;
         }
 
         return null;
