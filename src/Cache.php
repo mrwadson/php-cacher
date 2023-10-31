@@ -2,6 +2,7 @@
 
 namespace mrwadson\cacher;
 
+use Exception;
 use RuntimeException;
 
 /**
@@ -29,9 +30,9 @@ class Cache
      *
      * @return void | array
      */
-    public static function options($options)
+    public static function options(array $options)
     {
-        if (!is_array($options)) {
+        if (!$options) {
             return self::$options;
         }
         self::$options = array_merge(self::$options, $options);
@@ -43,7 +44,7 @@ class Cache
      *
      * @return void
      */
-    private static function init()
+    private static function init(): void
     {
         self::$options['cache_dir'] = self::$options['cache_dir'] ?: self::initiateDir();
 
@@ -64,7 +65,7 @@ class Cache
      *
      * @return string
      */
-    private static function initiateDir()
+    private static function initiateDir(): string
     {
         $stack = debug_backtrace();
         $firstFrame = $stack[count($stack) - 1];
@@ -76,12 +77,12 @@ class Cache
      * And writes callback function resulted data to the cache file (if callback function is used)
      *
      * @param string $key file cache key
-     * @param callable $callback callable function that return new data
-     * @param int $expire expire period in seconds if callable function used
+     * @param callable|null $callback callable function that return new data
+     * @param int|null $expire expire period in seconds if callable function used
      *
      * @return mixed
      */
-    public static function read($key, $callback = null, $expire = null)
+    public static function read(string $key, callable $callback = null, int $expire = null)
     {
         if (!self::$initiated) {
             self::init();
@@ -103,11 +104,11 @@ class Cache
      *
      * @param string $key file cache key
      * @param string | array $value file cache key
-     * @param int $expire expire period in seconds
+     * @param int|null $expire expire period in seconds
      *
      * @return void
      */
-    public static function write($key, $value, $expire = null)
+    public static function write(string $key, $value, int $expire = null): void
     {
         self::delete($key);
         file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . self::getExpire($expire), json_encode($value));
@@ -116,11 +117,11 @@ class Cache
     /**
      * Get cache expire time
      *
-     * @param int $expire seconds or -1 for lifetime cache
+     * @param int|null $expire seconds or -1 for lifetime cache
      *
      * @return mixed
      */
-    private static function getExpire($expire = null)
+    private static function getExpire(int $expire = null)
     {
         if ($expire === -1) {
             return $expire;
@@ -140,7 +141,7 @@ class Cache
      *
      * @return int|null
      */
-    public static function getExpiredTime($key)
+    public static function getExpiredTime(string $key): ?int
     {
         if (!self::$initiated) {
             self::init();
@@ -159,7 +160,7 @@ class Cache
      *
      * @return array
      */
-    private static function search($key)
+    private static function search(string $key): array
     {
         return glob(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.*');
     }
@@ -171,7 +172,7 @@ class Cache
      *
      * @return void
      */
-    public static function delete($key)
+    public static function delete(string $key): void
     {
         if (!self::$initiated) {
             self::init();
@@ -192,7 +193,7 @@ class Cache
      *
      * @return string
      */
-    private static function clean($key)
+    private static function clean(string $key): string
     {
         return preg_replace('/[^A-Z0-9._-]/i', '', $key);
     }
@@ -201,12 +202,13 @@ class Cache
      * Shutdown function for clear all cache
      *
      * @return void
+     * @throws Exception
      */
-    public static function end()
+    public static function end(): void
     {
         $files = glob(self::$options['cache_dir'] . '/cache.*');
 
-        if ($files && (!self::$options['clear_cache_random'] || mt_rand(1, 100) === 1)) {
+        if ($files && (!self::$options['clear_cache_random'] || random_int(1, 100) === 1)) {
             foreach ($files as $file) {
                 $time = (int)substr(strrchr($file, '.'), 1);
                 if ($time !== -1 && $time < time() && !@unlink($file)) {

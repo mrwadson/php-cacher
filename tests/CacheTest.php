@@ -5,36 +5,34 @@ use PHPUnit\Framework\TestCase;
 
 class CacheTest extends TestCase
 {
-    public function __construct($name = null, array $data = [], $dataName = '')
+    public function __construct($name = null)
     {
         Cache::options(['cache_dir' => __DIR__ . '/../cache_dir']);
-        parent::__construct($name, $data, $dataName);
+        parent::__construct($name);
     }
 
-    public function testCacheWriteAndRead()
+    public function testCacheWriteAndRead(): void
     {
         Cache::write('cache_key', ['key1' => 'value1', 'key2' => 'value2'], 5); // cache lifetime 5 seconds
-        $this->assertFileExists( __DIR__ . '/../cache_dir');
+        $this->assertFileExists(__DIR__ . '/../cache_dir');
 
         $cache = Cache::read('cache_key');
         $this->assertArrayHasKey('key2', $cache);
     }
 
-    public function testGetCacheExpiredTime()
+    public function testGetCacheExpiredTime(): void
     {
-        Cache::write('cache_key_expired_time', ['key1' => 'value1', 'key2' => 'value2'], 5);
+        Cache::write('cache_key_expired_time1', ['key1' => 'value1', 'key2' => 'value2'], 5);
         $expiredTime = Cache::getExpiredTime('cache_key_expired_time1');
-
-        $this->assertInternalType('int', $expiredTime);
+        $this->assertIsInt($expiredTime);
     }
 
-    public function testCallbackOnReadTheCache()
+    public function testCallbackOnReadTheCache(): void
     {
         $data = Cache::read('cache_key', static function () {
             return ['key1' => 'value1'];
         });
 
-        $this->assertInternalType('array', $data);
         $this->assertArrayHasKey('key1', $data);
     }
 }
