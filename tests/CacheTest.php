@@ -23,7 +23,7 @@ class CacheTest extends TestCase
     public function testGetCacheExpiredTime(): void
     {
         Cache::write('cache_key_expired_time1', ['key1' => 'value1', 'key2' => 'value2'], 5);
-        $expiredTime = Cache::getExpiredTime('cache_key_expired_time1');
+        $expiredTime = Cache::getExpiredTimeByKey('cache_key_expired_time1');
         $this->assertIsInt($expiredTime);
     }
 

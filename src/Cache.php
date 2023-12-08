@@ -114,7 +114,7 @@ class Cache
     public static function write(string $key, $value, int $expire = null): void
     {
         self::delete($key);
-        file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . self::getExpire($expire), json_encode($value));
+        file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . self::getExpireTime($expire), json_encode($value));
     }
 
     /**
@@ -124,7 +124,7 @@ class Cache
      *
      * @return mixed
      */
-    private static function getExpire(int $expire = null)
+    private static function getExpireTime(int $expire = null)
     {
         if ($expire === -1) {
             return $expire;
@@ -144,7 +144,7 @@ class Cache
      *
      * @return int|null
      */
-    public static function getExpiredTime(string $key): ?int
+    public static function getExpiredTimeByKey(string $key): ?int
     {
         if (!self::$initiated) {
             self::init();
@@ -154,6 +154,18 @@ class Cache
         }
 
         return null;
+    }
+
+    /**
+     * Check if cache expired by key
+     *
+     * @param string $key
+     *
+     * @return bool
+     */
+    public static function isCacheExpired(string $key): bool
+    {
+        return self::isTimeExpired(self::getExpiredTimeByKey($key));
     }
 
     /**
@@ -214,10 +226,22 @@ class Cache
         if ($files && (!self::$options['clear_cache_random'] || random_int(1, 100) === 1)) {
             foreach ($files as $file) {
                 $time = (int)substr(strrchr($file, '.'), 1);
-                if ($time !== -1 && $time < time() && !@unlink($file)) {
+                if (self::isTimeExpired($time) && !@unlink($file)) {
                     clearstatcache(false, $file);
                 }
             }
         }
+    }
+
+    /**
+     * Check if time expired
+     *
+     * @param int $time
+     *
+     * @return bool
+     */
+    private static function isTimeExpired(int $time): bool
+    {
+        return $time !== -1 && $time < time();
     }
 }
