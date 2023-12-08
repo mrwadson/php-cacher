@@ -165,7 +165,11 @@ class Cache
      */
     public static function isExpired(string $key): bool
     {
-        return self::isTimeExpired(self::getExpiredTimeByKey($key));
+        if ($expiredTime = self::getExpiredTimeByKey($key)) {
+            return self::isTimeExpired($expiredTime);
+        }
+
+        return true;
     }
 
     /**
