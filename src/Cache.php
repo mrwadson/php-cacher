@@ -57,8 +57,10 @@ class Cache
         self::$options['clear_cache_random'] = (bool)self::$options['clear_cache_random'];
         self::$options['never_clear_all_cache'] = (bool)self::$options['never_clear_all_cache'];
 
-        if (!self::$initiated && !self::$options['never_clear_all_cache']) {
-            register_shutdown_function([__CLASS__, 'end']);
+        if (!self::$initiated) {
+            if (!self::$options['never_clear_all_cache']) {
+                register_shutdown_function([__CLASS__, 'end']);
+            }
             self::$initiated = true;
         }
     }
