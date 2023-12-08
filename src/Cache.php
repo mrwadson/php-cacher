@@ -18,7 +18,8 @@ class Cache
     private static $options = [
         'cache_dir' => null, // if null -> will change to "cache" dir related to the running script.
         'cache_expire' => 3600, // in seconds = 1 hour or -1 for lifetime cache
-        'clear_cache_random' => false // clear cache in randomly period (see "end" function)
+        'clear_cache_random' => false, // clear cache in randomly period (see "end" function)
+        'never_clear_all_cache' => false // never clear all cache files (at end script)
     ];
 
     private static $initiated = false;
@@ -54,7 +55,9 @@ class Cache
 
         self::$options['cache_expire'] = (int)self::$options['cache_expire'];
         self::$options['clear_cache_random'] = (bool)self::$options['clear_cache_random'];
-        if (!self::$initiated) {
+        self::$options['never_clear_cache'] = (bool)self::$options['never_clear_cache'];
+
+        if (!self::$initiated && !self::$options['never_clear_cache']) {
             register_shutdown_function([__CLASS__, 'end']);
             self::$initiated = true;
         }
