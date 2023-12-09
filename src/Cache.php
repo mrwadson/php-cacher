@@ -96,6 +96,10 @@ class Cache
             self::init();
         }
 
+        if (self::$options['never_clear_all_cache']) {
+            self::deleteIfExpired($key);
+        }
+
         if ($files = self::search($key)) {
             $data = json_decode(file_get_contents($files[0]), true);
 
@@ -140,23 +144,11 @@ class Cache
      */
     public static function isExpired(string $key): bool
     {
-        if ($expiredTime = self::getExpiredTimeByKey($key)) {
+        if ($expiredTime = self::getExpiredTime($key)) {
             return self::isTimeExpired($expiredTime);
         }
 
         return true;
-    }
-
-    /**
-     * Search the cache files by key
-     *
-     * @param string $key file cache key
-     *
-     * @return array
-     */
-    private static function search(string $key): array
-    {
-        return glob(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.*');
     }
 
     /**
@@ -178,6 +170,39 @@ class Cache
                 }
             }
         }
+    }
+
+    /**
+     * Clear cache by key if expired
+     *
+     * @param string $key
+     *
+     * @return void
+     */
+    public static function deleteIfExpired(string $key): void
+    {
+        if (self::isExpired($key)) {
+            self::delete($key);
+        }
+    }
+
+    /**
+     * Get cache expired unix time by key
+     *
+     * @param string $key file cache key
+     *
+     * @return int|null
+     */
+    public static function getExpiredTime(string $key): ?int
+    {
+        if (!self::$initiated) {
+            self::init();
+        }
+        if (($files = self::search($key)) && ($parts = explode('.', $files[0])) && $time = array_pop($parts)) {
+            return (int)$time;
+        }
+
+        return null;
     }
 
     /**
@@ -203,6 +228,18 @@ class Cache
     }
 
     /**
+     * Search the cache files by key
+     *
+     * @param string $key file cache key
+     *
+     * @return array
+     */
+    private static function search(string $key): array
+    {
+        return glob(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.*');
+    }
+
+    /**
      * Get cache expire time
      *
      * @param int|null $expire seconds or -1 for lifetime cache
@@ -220,25 +257,6 @@ class Cache
         }
 
         return (time() + (is_null($expire) ? self::$options['cache_expire'] : $expire));
-    }
-
-    /**
-     * Get cache expired unix time by key
-     *
-     * @param string $key file cache key
-     *
-     * @return int|null
-     */
-    private static function getExpiredTimeByKey(string $key): ?int
-    {
-        if (!self::$initiated) {
-            self::init();
-        }
-        if (($files = self::search($key)) && ($parts = explode('.', $files[0])) && $time = array_pop($parts)) {
-            return (int)$time;
-        }
-
-        return null;
     }
 
     /**

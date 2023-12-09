@@ -27,16 +27,6 @@ class CacheTest extends TestCase
         $this->assertTrue(Cache::isExpired(__METHOD__));
     }
 
-    public function testCacheExistsIfNeverClear(): void
-    {
-        Cache::options([
-            'never_clear_all_cache' => true
-        ]);
-        Cache::write(__METHOD__, ['key1' => 'value1', 'key2' => 'value2'], 3);
-        sleep(5);
-        $this->assertArrayHasKey('key2', Cache::read(__METHOD__));
-    }
-
     public function testCallbackOnReadTheCache(): void
     {
         $data = Cache::read(__METHOD__, false, static function () {
