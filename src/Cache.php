@@ -19,7 +19,8 @@ class Cache
         'cache_dir' => null, // if null -> will change to "cache" dir related to the running script.
         'cache_expire' => 3600, // in seconds = 1 hour or -1 for lifetime cache
         'clear_cache_random' => false, // clear cache in randomly period (see "end" function)
-        'never_clear_all_cache' => false // never clear all cache files (at end script)
+        'never_clear_all_cache' => false, // never clear all cache files (at end script)
+        'delete_cache_if_expired' => true // delete cache if it expired and never_clear_all_cache = true (on read cache)
     ];
 
     private static $initiated = false;
@@ -56,6 +57,7 @@ class Cache
         self::$options['cache_expire'] = (int)self::$options['cache_expire'];
         self::$options['clear_cache_random'] = (bool)self::$options['clear_cache_random'];
         self::$options['never_clear_all_cache'] = (bool)self::$options['never_clear_all_cache'];
+        self::$options['delete_cache_if_expired'] = (bool)self::$options['delete_cache_if_expired'];
 
         if (!self::$initiated) {
             if (!self::$options['never_clear_all_cache']) {
@@ -96,7 +98,7 @@ class Cache
             self::init();
         }
 
-        if (self::$options['never_clear_all_cache']) {
+        if (self::$options['never_clear_all_cache'] && self::$options['delete_cache_if_expired']) {
             self::deleteIfExpired($key);
         }
 
