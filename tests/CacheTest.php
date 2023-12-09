@@ -13,26 +13,50 @@ class CacheTest extends TestCase
 
     public function testCacheWriteAndRead(): void
     {
-        Cache::write('cache_key', ['key1' => 'value1', 'key2' => 'value2'], 5); // cache lifetime 5 seconds
+        Cache::write(__METHOD__, ['key1' => 'value1', 'key2' => 'value2'], 5); // cache lifetime 5 seconds
         $this->assertFileExists(__DIR__ . '/../cache_dir');
 
-        $cache = Cache::read('cache_key');
+        $cache = Cache::read(__METHOD__);
         $this->assertArrayHasKey('key2', $cache);
     }
 
-    public function testGetCacheExpiredTime(): void
+    public function testGetCacheIsExpired(): void
     {
-        Cache::write('cache_key_expired_time1', ['key1' => 'value1', 'key2' => 'value2'], 5);
-        $expiredTime = Cache::getExpiredTimeByKey('cache_key_expired_time1');
-        $this->assertIsInt($expiredTime);
+        Cache::write(__METHOD__, ['key1' => 'value1', 'key2' => 'value2'], 3);
+        sleep(5);
+        $this->assertTrue(Cache::isExpired(__METHOD__));
+    }
+
+    public function testCacheExistsIfNeverClear(): void
+    {
+        Cache::options([
+            'never_clear_all_cache' => true
+        ]);
+        Cache::write(__METHOD__, ['key1' => 'value1', 'key2' => 'value2'], 3);
+        sleep(5);
+        $this->assertArrayHasKey('key2', Cache::read(__METHOD__));
     }
 
     public function testCallbackOnReadTheCache(): void
     {
-        $data = Cache::read('cache_key', static function () {
+        $data = Cache::read(__METHOD__, false, static function () {
             return ['key1' => 'value1'];
         });
 
         $this->assertArrayHasKey('key1', $data);
+    }
+
+    public function testReadAndWriteCacheWithCallback(): void
+    {
+        $cachedClassData = Cache::read(__METHOD__, true, static function () {
+            $class = new StdClass();
+            $class->key1 = 'value1';
+            $class->key2 = 555;
+            $class->key3 = false;
+
+            return $class;
+        }, true, null, true);
+
+        $this->assertObjectHasAttribute('key3', $cachedClassData);
     }
 }

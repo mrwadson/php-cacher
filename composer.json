@@ -25,6 +25,6 @@
     },
     "scripts": {
         "test": "./vendor/bin/phpunit tests",
-        "test-callback": "./vendor/bin/phpunit  --filter testCallbackOnReadTheCache tests"
+        "test-callback": "./vendor/bin/phpunit --filter testCacheWriteAndRead tests"
     }
 }

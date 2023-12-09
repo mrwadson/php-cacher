@@ -78,26 +78,34 @@ class Cache
     }
 
     /**
-     * Read cache from the cache file by key
+     * Read cache from the file by key
      * And writes callback function resulted data to the cache file (if callback function is used)
      *
      * @param string $key file cache key
+     * @param bool $unserializeOnRead need unserialize on read from cache
      * @param callable|null $callback callable function that return new data
+     * @param bool $writeCallbackResult write data from callback result to cache
      * @param int|null $expire expire period in seconds if callable function used
+     * @param bool $serializeOnWrite is need serialize value if write callback result
      *
      * @return mixed
      */
-    public static function read(string $key, callable $callback = null, int $expire = null)
+    public static function read(string $key, bool $unserializeOnRead = false, callable $callback = null, bool $writeCallbackResult = true, int $expire = null, bool $serializeOnWrite = false)
     {
         if (!self::$initiated) {
             self::init();
         }
+
         if ($files = self::search($key)) {
-            return json_decode(file_get_contents($files[0]), true);
+            $data = json_decode(file_get_contents($files[0]), true);
+
+            return $unserializeOnRead ? unserialize($data, ['allowed_classes' => true]) : $data;
         }
 
         if ($callback && $data = $callback()) {
-            self::write($key, $data, $expire);
+            if ($writeCallbackResult) {
+                self::write($key, $data, $expire, $serializeOnWrite);
+            }
             return $data;
         }
 
@@ -105,57 +113,22 @@ class Cache
     }
 
     /**
-     * Write cache to the cache file by key
+     * Write cache to the file by key
      *
      * @param string $key file cache key
      * @param string | array $value file cache key
      * @param int|null $expire expire period in seconds
+     * @param bool $serialize is need serialize value
      *
      * @return void
      */
-    public static function write(string $key, $value, int $expire = null): void
+    public static function write(string $key, $value, int $expire = null, bool $serialize = false): void
     {
         self::delete($key);
+
+        $value = $serialize ? serialize($value) : $value;
+
         file_put_contents(self::$options['cache_dir'] . '/cache.' . self::clean($key) . '.' . self::getExpireTime($expire), json_encode($value));
-    }
-
-    /**
-     * Get cache expire time
-     *
-     * @param int|null $expire seconds or -1 for lifetime cache
-     *
-     * @return mixed
-     */
-    private static function getExpireTime(int $expire = null)
-    {
-        if ($expire === -1) {
-            return $expire;
-        }
-
-        if (is_null($expire) && self::$options['cache_expire'] === -1) {
-            return self::$options['cache_expire'];
-        }
-
-        return (time() + (is_null($expire) ? self::$options['cache_expire'] : $expire));
-    }
-
-    /**
-     * Get cache expired unix time by key
-     *
-     * @param string $key file cache key
-     *
-     * @return int|null
-     */
-    public static function getExpiredTimeByKey(string $key): ?int
-    {
-        if (!self::$initiated) {
-            self::init();
-        }
-        if (($files = self::search($key)) && ($parts = explode('.', $files[0])) && $time = array_pop($parts)) {
-            return (int)$time;
-        }
-
-        return null;
     }
 
     /**
@@ -208,18 +181,6 @@ class Cache
     }
 
     /**
-     * Clean the key from unsupported characters
-     *
-     * @param string $key file cache key
-     *
-     * @return string
-     */
-    private static function clean(string $key): string
-    {
-        return preg_replace('/[^A-Z0-9._-]/i', '', $key);
-    }
-
-    /**
      * Shutdown function for clear all cache
      *
      * @return void
@@ -227,16 +188,57 @@ class Cache
      */
     public static function end(): void
     {
-        $files = glob(self::$options['cache_dir'] . '/cache.*');
+        if (!self::$options['never_clear_all_cache']) {
+            $files = glob(self::$options['cache_dir'] . '/cache.*');
 
-        if ($files && (!self::$options['clear_cache_random'] || random_int(1, 100) === 1)) {
-            foreach ($files as $file) {
-                $time = (int)substr(strrchr($file, '.'), 1);
-                if (self::isTimeExpired($time) && !@unlink($file)) {
-                    clearstatcache(false, $file);
+            if ($files && (!self::$options['clear_cache_random'] || random_int(1, 100) === 1)) {
+                foreach ($files as $file) {
+                    $time = (int)substr(strrchr($file, '.'), 1);
+                    if (self::isTimeExpired($time) && !@unlink($file)) {
+                        clearstatcache(false, $file);
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Get cache expire time
+     *
+     * @param int|null $expire seconds or -1 for lifetime cache
+     *
+     * @return mixed
+     */
+    private static function getExpireTime(int $expire = null)
+    {
+        if ($expire === -1) {
+            return $expire;
+        }
+
+        if (is_null($expire) && self::$options['cache_expire'] === -1) {
+            return self::$options['cache_expire'];
+        }
+
+        return (time() + (is_null($expire) ? self::$options['cache_expire'] : $expire));
+    }
+
+    /**
+     * Get cache expired unix time by key
+     *
+     * @param string $key file cache key
+     *
+     * @return int|null
+     */
+    private static function getExpiredTimeByKey(string $key): ?int
+    {
+        if (!self::$initiated) {
+            self::init();
+        }
+        if (($files = self::search($key)) && ($parts = explode('.', $files[0])) && $time = array_pop($parts)) {
+            return (int)$time;
+        }
+
+        return null;
     }
 
     /**
@@ -249,5 +251,17 @@ class Cache
     private static function isTimeExpired(int $time): bool
     {
         return $time !== -1 && $time < time();
+    }
+
+    /**
+     * Clean the key from unsupported characters
+     *
+     * @param string $key file cache key
+     *
+     * @return string
+     */
+    private static function clean(string $key): string
+    {
+        return preg_replace('/[^A-Z0-9._-]/i', '', $key);
     }
 }
